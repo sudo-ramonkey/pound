@@ -23,7 +23,7 @@
 #include <stdarg.h>
 
 /*** defines ***/
-#define POUND_VERSION "0.0.6"
+#define POUND_VERSION "0.0.8"
 #define POUND_TAB_STOP 4
 
 #define CTRL_KEY(k) ((k) & 0x1f) //00011111
@@ -516,15 +516,50 @@ void editorSave()
 
 void editorFindCallback(char* query, int key)
 {
-	if (key == '\n' || key == '\x1b') {
-		return;
+	static int last_match = -1;
+	static int direction = 1;
+
+	switch (key) {
+		case '\n':
+		case '\x1b':
+			last_match = -1;
+			direction = 1;
+			return;
+			break;
+		
+		case ARROW_RIGHT:
+		case ARROW_DOWN:
+			direction = 1;
+			break;
+		
+		case ARROW_LEFT:
+		case ARROW_UP:
+			direction = -1;
+			break;	
+		
+		default:
+			last_match = -1;
+			direction = 1;	
 	}
 
+	if (last_match == -1) {
+		direction = 1;
+	}
+
+	int current = last_match;
 	for (int i = 0; i < E.numrows; i++) {
-		erow* row = &E.row[i];
+		current += direction;	
+		if (current == -1) {
+			current = E.numrows - 1;
+		} else if (current == E.numrows) {
+			current = 0;
+		}
+
+		erow* row = &E.row[current];
 		char* match = strstr(row->render, query);
 		if (match) {
-			E.cy = i;
+			last_match = current;
+			E.cy = current;
 			E.cx = editorRowRxToCx(row, match - row->render);
 			E.rowoff = E.numrows;
 			break;
@@ -535,10 +570,20 @@ void editorFindCallback(char* query, int key)
 
 void editorFind()
 {
-	char* query = editorPrompt("Search: %s (ESC to cancel)", editorFindCallback);
+	int saved_cx = E.cx;
+	int saved_cy = E.cy;
+	int saved_coloff = E.coloff;
+	int saved_rowoff = E.rowoff;
+
+	char* query = editorPrompt("Search: %s (Use ESC/Arrows/Enter)", editorFindCallback);
 	
 	if (query) {
 		free(query);
+	} else {
+		E.cx = saved_cx;
+		E.cy = saved_cy;
+		E.coloff = saved_coloff;
+		E.rowoff = saved_rowoff;
 	}
 }
 
@@ -600,7 +645,7 @@ void editorDrawRows(struct abuf *ab)
         if (filerow >= E.numrows) {
             if (E.numrows == 0 && y == E.screenrows / 3) {
                 char welcome[80];
-                int welcomelen = snprintf(welcome, sizeof(welcome), "Kilo editor -- version %s", POUND_VERSION);
+                int welcomelen = snprintf(welcome, sizeof(welcome), "Pound editor -- version %s", POUND_VERSION);
                 if(welcomelen > E.screencols) {
                     welcomelen = E.screencols;
                 }
@@ -908,7 +953,7 @@ int main(int argc, char* argv[])
         editorOpen(argv[1]);
     }
 
-    editorSetStatusMessage("Help: Ctrl-S = save| Ctrl-F = find |Ctrl-Q = quit");
+    editorSetStatusMessage("Help: Ctrl-S = save | Ctrl-F = find | Ctrl-Q = quit");
 
     while(1) {
         editorRefreshScreen();
@@ -924,8 +969,9 @@ int main(int argc, char* argv[])
    / __ \/ __ \/ / / / __ \/ __  / 
   / /_/ / /_/ / /_/ / / / / /_/ /  
  / .___/\____/\__,_/_/ /_/\__,_/   
-/_/                                
-
+/_/  
+                              
+TODO:
 Escribir funcion que imprima este ascii?
 Sin agregar dependencias;
 */
