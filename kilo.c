@@ -347,6 +347,26 @@ void editorInsertChar(int c)
     E.cx++;
 }
 
+//Funcion agregada utilizando el propio editor de texto siendo desarrollado
+//24/04/2024
+//Esto hace que el desarrollo sea autosustentable
+
+void editorInsertNewLine()
+{
+	if (E.cx == 0) {
+		editorInsertRow(E.cy, "", 0);
+	} else {
+		erow* row = &E.row[E.cy];
+		editorInsertRow(E.cy + 1, &row->chars[E.cx], row->size - E.cx);
+		row = &E.row[E.cy];
+		row->size = E.cx;
+		row->chars[row->size] = '\0';
+		editorUpdateRow(row);
+	}
+	E.cy++;
+	E.cx = 0;
+}
+
 void editorInsertNewLine()
 {
     if (E.cx == 0) {
