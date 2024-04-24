@@ -23,7 +23,7 @@
 #include <stdarg.h>
 
 /*** defines ***/
-#define POUND_VERSION "0.0.5"
+#define POUND_VERSION "0.0.6"
 #define POUND_TAB_STOP 4
 
 #define CTRL_KEY(k) ((k) & 0x1f) //00011111
@@ -74,6 +74,7 @@ struct editorConfig E;
 
 void editorSetStatusMessage(const char *fmt, ...);
 void editorRefreshScreen();
+char* editorPrompt(char* prompt);
 
 /*** terminal ***/
 
@@ -463,7 +464,11 @@ void editorOpen(char* filename)
 void editorSave()
 {
     if (E.filename == NULL) {
-        return;
+		E.filename = editorPrompt("Save as: %s (ESC to cancel)");
+		if (E.filename == NULL) {
+			editorSetStatusMessage("Save aborted");
+			return;
+		}
     }
     
     int len;
@@ -667,7 +672,15 @@ char* editorPrompt(char* prompt)
 		editorRefreshScreen();
 
 		int c = editorReadKey();
-		if(c == '\r') {
+		if (c == DEL_KEY || c == CTRL_KEY('h') || c == BACKSPACE) {
+			if (buflen != 0) {
+				buf[--buflen] = '\0';
+			}
+		} else if (c == '\x1b') {
+			editorSetStatusMessage("");
+			free(buf);
+			return NULL;
+		} else if(c == '\n') {
 			if (buflen != 0) {
 				editorSetStatusMessage("");
 				return buf;
