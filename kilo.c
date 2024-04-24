@@ -23,7 +23,7 @@
 #include <stdarg.h>
 
 /*** defines ***/
-#define KILO_VERSION "0.0.4"
+#define KILO_VERSION "0.0.5"
 #define KILO_TAB_STOP 4
 
 #define CTRL_KEY(k) ((k) & 0x1f) //00011111
@@ -351,6 +351,7 @@ void editorInsertChar(int c)
 //24/04/2024
 //Esto hace que el desarrollo sea autosustentable
 
+/* Ya habia escrito esta funcion xD, la emocion hizo que lo olvidara
 void editorInsertNewLine()
 {
 	if (E.cx == 0) {
@@ -366,6 +367,7 @@ void editorInsertNewLine()
 	E.cy++;
 	E.cx = 0;
 }
+*/
 
 void editorInsertNewLine()
 {
