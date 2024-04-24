@@ -23,8 +23,8 @@
 #include <stdarg.h>
 
 /*** defines ***/
-#define KILO_VERSION "0.0.5"
-#define KILO_TAB_STOP 4
+#define POUND_VERSION "0.0.5"
+#define POUND_TAB_STOP 4
 
 #define CTRL_KEY(k) ((k) & 0x1f) //00011111
 
@@ -228,7 +228,7 @@ int editorRowCxToRx(erow* row, int cx) {
 
     for (int j = 0; j < cx; j++) {
         if (row->chars[j] == '\t') {
-            rx += (KILO_TAB_STOP - 1) - (rx % KILO_TAB_STOP);
+            rx += (POUND_TAB_STOP - 1) - (rx % POUND_TAB_STOP);
         }
         rx++;
     }
@@ -245,13 +245,13 @@ void editorUpdateRow(erow* row)
         }
     }
     free(row->render);
-    row->render = malloc(row->size + tabs * (KILO_TAB_STOP - 1)  + 1);
+    row->render = malloc(row->size + tabs * (POUND_TAB_STOP - 1)  + 1);
 
     int idx = 0;
     for (int i = 0; i < row->size; i++) {
         if (row->chars[i] == '\t') {
             row->render[idx++] = ' ';
-            while (idx % KILO_TAB_STOP != 0) {
+            while (idx % POUND_TAB_STOP != 0) {
                 row->render[idx++] = ' ';
             }
         } else {
@@ -545,7 +545,7 @@ void editorDrawRows(struct abuf *ab)
         if (filerow >= E.numrows) {
             if (E.numrows == 0 && y == E.screenrows / 3) {
                 char welcome[80];
-                int welcomelen = snprintf(welcome, sizeof(welcome), "Kilo editor -- version %s", KILO_VERSION);
+                int welcomelen = snprintf(welcome, sizeof(welcome), "Kilo editor -- version %s", POUND_VERSION);
                 if(welcomelen > E.screencols) {
                     welcomelen = E.screencols;
                 }
@@ -843,11 +843,12 @@ int main(int argc, char* argv[])
 }
 
 /* 
-    __ __ ______    ____ 
-   / //_//  _/ /   / __ \
-  / ,<   / // /   / / / /
- / /| |_/ // /___/ /_/ / 
-/_/ |_/___/_____/\____/  
+                                 __
+    ____  ____  __  ______  ____/ /
+   / __ \/ __ \/ / / / __ \/ __  / 
+  / /_/ / /_/ / /_/ / / / / /_/ /  
+ / .___/\____/\__,_/_/ /_/\__,_/   
+/_/                                
 
 Escribir funcion que imprima este ascii?
 Sin agregar dependencias;
