@@ -1,7 +1,9 @@
 /*** tutorial ***/
+
 /*
  * https://viewsourcecode.org/snaptoken/kilo/
  */
+
 /*** includes ***/
 
 //#include <bits/types/struct_iovec.h>
@@ -14,7 +16,6 @@
 #include <fcntl.h>
 #include <ctype.h>
 #include <time.h>
-#include <sys/ioctl.h>
 #include <stdlib.h>
 #include <termios.h>
 #include <string.h>
@@ -22,8 +23,18 @@
 #include <stdio.h>
 #include <stdarg.h>
 
+/*** porting ***/
+
+#ifdef __linux
+	#include<sys/ioctl.h>
+#elif __unix
+	#include<sys/ioctl.h>
+#elif __WIN32
+	#include<windows.h>
+#endif
+
 /*** defines ***/
-#define POUND_VERSION "0.1.2"
+#define POUND_VERSION "0.1.4"
 #define POUND_TAB_STOP 4
 
 #define CTRL_KEY(k) ((k) & 0x1f) //00011111
@@ -106,8 +117,8 @@ char* C_HL_keywords[] = {
 	"struct", "union", "typedef", "static", "enum", "class", "case",
 
 	"int|", "long|", "double|", "float|", "char|", "unsigned|", "signed|",
-	"void|", NULL
-};
+	"void|", "#include", "#ifdef", "#elif", "#endif" ,NULL
+}; /* TODO: Improve the keywords section so that it highlights any word after #*/
 
 struct editorSyntax HLDB[] = {
 	{
@@ -412,14 +423,28 @@ int editorSyntaxToColor(int hl)
 {
 	switch (hl) {
 		case HL_COMMENT: 
-		case HL_MLCOMMENT: return 36;
-		case HL_KEYWORD1: return 33;
-		case HL_KEYWORD2: return 32;
-		case HL_STRING: return 35;
-		case HL_NUMBER: return 31;
-		case HL_MATCH: return 34;
-		default: return 37;
+		case HL_MLCOMMENT: return 96;//bright cyan
+		case HL_KEYWORD1: return 33;//yellow
+		case HL_KEYWORD2: return 95;//magenta
+		case HL_STRING: return 32;//green
+		case HL_NUMBER: return 31;//red
+		case HL_MATCH: return 34;//blue
+		default: return 37;//white
 	}
+	
+	/*
+	original colors
+	switch (hl) {
+        case HL_COMMENT: 
+        case HL_MLCOMMENT: return 36;//cyan
+        case HL_KEYWORD1: return 33;//yellow
+        case HL_KEYWORD2: return 32;//green
+        case HL_STRING: return 35;//purple
+        case HL_NUMBER: return 31;//red
+        case HL_MATCH: return 34;//blue
+        default: return 37;//white
+    }*/
+
 }
 
 void editorSelectSyntaxHighlight()
