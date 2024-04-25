@@ -4,12 +4,12 @@
  */
 /*** includes ***/
 
-#include <bits/types/struct_iovec.h>
+//#include <bits/types/struct_iovec.h>
 #define _DEFAULT_SOURCE
 #define _BSD_SOURCE
 #define _GNU_SOURCE
 
-#include <asm-generic/ioctls.h>
+//#include <asm-generic/ioctls.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <ctype.h>
@@ -23,7 +23,7 @@
 #include <stdarg.h>
 
 /*** defines ***/
-#define POUND_VERSION "0.1.1"
+#define POUND_VERSION "0.1.2"
 #define POUND_TAB_STOP 4
 
 #define CTRL_KEY(k) ((k) & 0x1f) //00011111
@@ -100,10 +100,10 @@ struct editorConfig E;
 
 /*** filetypes ***/
 
-char* C_HL_extensions[] = {".c", ".h", ".cpp", NULL};
+char* C_HL_extensions[] = { ".c", ".h", ".cpp", NULL };
 char* C_HL_keywords[] = {
 	"switch", "if", "while", "for", "break", "continue", "return", "else",
-	"struct", "union", "typedef", "static", "enum", "class", "case", 
+	"struct", "union", "typedef", "static", "enum", "class", "case",
 
 	"int|", "long|", "double|", "float|", "char|", "unsigned|", "signed|",
 	"void|", NULL
@@ -146,16 +146,15 @@ void disableRawMode()
 
 void enableRawMode()
 {
-    if((tcgetattr(STDIN_FILENO, &E.orig_termios) == -1)){
-
+    if(tcgetattr(STDIN_FILENO, &E.orig_termios) == -1){
         die("tcsetattr");
     } 
     atexit(disableRawMode);
     
     struct termios raw = E.orig_termios;
-    raw.c_lflag &= ~(BRKINT | ICRNL | ISTRIP | IXON);
-    raw.c_lflag &= ~(OPOST);
-    raw.c_lflag &= ~(CS8);
+    raw.c_iflag &= ~(BRKINT | ICRNL | INPCK |ISTRIP | IXON);
+    raw.c_oflag &= ~(OPOST);
+    raw.c_cflag |= (CS8);
     raw.c_lflag &= ~(ECHO | ICANON | IEXTEN | ISIG);
     raw.c_cc[VMIN] = 0;
     raw.c_cc[VTIME] = 1;
@@ -330,6 +329,7 @@ void editorUpdateSyntax(erow* row)
 					continue;
 				}
 			} else if (!strncmp(&row->render[i], mcs, mcs_len)) {
+                memset(&row->hl[i], HL_MLCOMMENT, mcs_len);
 				i += mcs_len;
 				in_comment = 1;
 				continue;
@@ -338,27 +338,31 @@ void editorUpdateSyntax(erow* row)
 
 
 		if (E.syntax->flags & HL_HIGHLIGHT_STRINGS) {
-			row->hl[i] = HL_STRING;
-			if (c == '\\' && i + 1 < row->rsize) {
-				row->hl[i + 1] = HL_STRING;
-				i+=2;
-				continue;
-			}
+            if (in_string) {
+			    row->hl[i] = HL_STRING;
+			    if (c == '\\' && i + 1 < row->rsize) {
+				    row->hl[i + 1] = HL_STRING;
+				    i += 2;
+				    continue;
+			    }
 
-			if (c == in_string) {
-				in_string = 0;
-			}
-			i++;
-			prev_sep = 1;
-			continue;
-		} else {
-			if (c == '"' || c == '\'') {
-				in_string = c;
-				row->hl[i] = HL_STRING;
-				i++;
-				continue;
-			}
-		}		
+			    if (c == in_string) {
+				    in_string = 0;
+			    }
+
+			    i++;
+			    prev_sep = 1;
+			    continue;
+
+		    } else {
+			    if (c == '"' || c == '\'') {
+				    in_string = c;
+				    row->hl[i] = HL_STRING;
+				    i++;
+				    continue;
+			    }
+		    }
+        }
 
 
 
@@ -411,7 +415,7 @@ int editorSyntaxToColor(int hl)
 		case HL_MLCOMMENT: return 36;
 		case HL_KEYWORD1: return 33;
 		case HL_KEYWORD2: return 32;
-		case HL_STRING: return 0;
+		case HL_STRING: return 35;
 		case HL_NUMBER: return 31;
 		case HL_MATCH: return 34;
 		default: return 37;
@@ -770,12 +774,14 @@ void editorFindCallback(char* query, int key)
 	}
 
 	switch (key) {
+        case '\r':
 		case '\n':
 		case '\x1b':
+        {
 			last_match = -1;
 			direction = 1;
 			return;
-			break;
+        }
 		
 		case ARROW_RIGHT:
 		case ARROW_DOWN:
@@ -821,7 +827,6 @@ void editorFindCallback(char* query, int key)
 			break;
 		}
 	}
-
 }
 
 void editorFind()
@@ -1069,7 +1074,7 @@ char* editorPrompt(char* prompt, void (*callback)(char* , int))
 			}
 			free(buf);
 			return NULL;
-		} else if(c == '\n') {
+		} else if(c == '\n' || c == '\r') {
 			if (buflen != 0) {
 				editorSetStatusMessage("");
 				if (callback) {
@@ -1086,7 +1091,9 @@ char* editorPrompt(char* prompt, void (*callback)(char* , int))
 			buf[buflen] = '\0';
 		}
 		
-		if (callback) callback(buf, c); /* TODO: Revisar la funcion callback*/
+		if (callback) {
+            callback(buf, c);
+        } /* TODO: Revisar la funcion callback*/
 	}
 }
 
@@ -1137,6 +1144,7 @@ void editorProcessKeypress()
     int c = editorReadKey();
     
     switch (c) {
+        case '\r':
         case '\n':
             editorInsertNewLine();
             break;
